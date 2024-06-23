@@ -1,0 +1,655 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Game State Management API",
+      "version": "1.0.0",
+      "description": "API for managing game state with MongoDB, including SSE streams and control page."
+    },
+    "servers": [
+      {
+        "url": "http://localhost:3000/api",
+        "description": "Local server"
+      }
+    ],
+    "paths": {
+      "/games": {
+        "post": {
+          "summary": "Create a new game",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Game"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Game created successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Game"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/games/reset/{gameId}": {
+        "post": {
+          "summary": "Reset a game",
+          "parameters": [
+            {
+              "name": "gameId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Game reset successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Game"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/games/{gameId}": {
+        "get": {
+          "summary": "Get a game by ID",
+          "parameters": [
+            {
+              "name": "gameId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Game retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Game"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "summary": "Update a game by ID",
+          "parameters": [
+            {
+              "name": "gameId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Game"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Game updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Game"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete a game by ID",
+          "parameters": [
+            {
+              "name": "gameId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "Game deleted successfully"
+            }
+          }
+        }
+      },
+      "/games/{gameId}/rounds": {
+        "post": {
+          "summary": "Add a round to a game",
+          "parameters": [
+            {
+              "name": "gameId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Round"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Round added to game successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Round"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/games/{gameId}/rounds/order": {
+        "put": {
+          "summary": "Update the order of rounds in a game",
+          "parameters": [
+            {
+              "name": "gameId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "roundOrder": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Round order updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Game"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/games/{gameId}/teams/{teamId}/name": {
+        "put": {
+          "summary": "Update a team's name",
+          "parameters": [
+            {
+              "name": "gameId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "teamId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Team name updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Team"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/games/{gameId}/teams/{teamId}/score": {
+        "put": {
+          "summary": "Update a team's score",
+          "parameters": [
+            {
+              "name": "gameId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "teamId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "score": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Team score updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Team"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/games/{gameId}/active-round": {
+        "put": {
+          "summary": "Switch the currently active round",
+          "parameters": [
+            {
+              "name": "gameId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "roundIndex": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Active round switched successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Game"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/games/past": {
+        "get": {
+          "summary": "Retrieve past games",
+          "responses": {
+            "200": {
+              "description": "Past games retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Game"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/rounds/{roundId}": {
+        "get": {
+          "summary": "Get a round by ID",
+          "parameters": [
+            {
+              "name": "roundId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Round retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Round"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "summary": "Update a round by ID",
+          "parameters": [
+            {
+              "name": "roundId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Round"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Round updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Round"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete a round by ID",
+          "parameters": [
+            {
+              "name": "roundId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "Round deleted successfully"
+            }
+          }
+        }
+      },
+      "/teams/{teamId}": {
+        "get": {
+          "summary": "Get a team by ID",
+          "parameters": [
+            {
+              "name": "teamId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Team retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Team"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "summary": "Update a team by ID",
+          "parameters": [
+            {
+              "name": "teamId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Team updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Team"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete a team by ID",
+          "parameters": [
+            {
+              "name": "teamId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "Team deleted successfully"
+            }
+          }
+        }
+      },
+      "/view": {
+        "get": {
+          "summary": "Stream events for a game session",
+          "parameters": [
+          ],
+          "responses": {
+            "200": {
+              "description": "Event stream established"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Game": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "currentRound": {
+              "type": "number"
+            },
+            "rounds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "teams": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "Round": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "question": {
+              "type": "string"
+            },
+            "answers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "points": {
+                    "type": "number"
+                  },
+                  "revealed": {
+                    "type": "boolean"
+                  },
+                  "index": {
+                    "type": "number"
+                  }
+                }
+              }
+            },
+            "scorePool": {
+              "type": "number"
+            },
+            "strikes": {
+              "type": "number"
+            },
+            "maxStrikes": {
+              "type": "number"
+            }
+          }
+        },
+        "Team": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "score": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    }
+  }
+  
