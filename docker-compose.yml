@@ -15,12 +15,14 @@ services:
   #     dockerfile: dev.web.Dockerfile
   #   ports:
   #     - 5173:5173
-  mongo:
-    image: mongo:8.0-rc
-    ports:
-      - 27017:27017
-    volumes:
-      - mongo-data:/data/db
+  # mongo:
+  #   image: mongo:8.0-rc
+  #   ports:
+  #     - 27017:27017
+  #   volumes:
+  #     - mongo-data:/data/db
+
+  gateway:
 
 volumes:
   mongo-data:

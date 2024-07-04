@@ -1,19 +1,11 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IGame extends Document {
-  name: string;
-  currentRound: number;
-  rounds: mongoose.Types.ObjectId[];
-  teams: mongoose.Types.ObjectId[];
-  createdAt: Date;
+  state: any;  // Use a flexible type to accommodate the entire game state
 }
 
 const gameSchema: Schema = new Schema({
-  name: { type: String, required: true },
-  currentRound: { type: Number, default: 0 },
-  rounds: [{ type: Schema.Types.ObjectId, ref: 'Round' }],
-  teams: [{ type: Schema.Types.ObjectId, ref: 'Team' }],
-  createdAt: { type: Date, default: Date.now }
+  state: { type: Schema.Types.Mixed, required: true }  // Mixed type for flexibility
 });
 
 export default mongoose.model<IGame>('Game', gameSchema);

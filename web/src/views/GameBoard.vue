@@ -1,87 +1,100 @@
 <template>
   <div class="app">
-    <div class="wrapper">
+    <div class="wrapper" v-if="!gameState.showQuestion">
       <div class="team-score-container left-score">
         <div class="team-score">{{ team1Score }}</div>
+        <div class="team-name">{{ gameState.team1?.name }}</div>
       </div>
       <div class="game-board">
         <div class="score-container">
           <div class="score">{{ currentScore }}</div>
         </div>
         <div class="answers">
-          <div class="answer-row" v-for="(answer, index) in answers" :key="index" @dblclick="toggleAnswer(answer)">
-            <template v-if="answer.revealed">
-              <div @click="editAnswer(answer)">
-                <template v-if="answer.isEditing">
-                  <input v-model="answer.text" @blur="saveAnswer(answer)" @keyup.enter="saveAnswer(answer)">
-                </template>
-                <template v-else>
-                  <div class="answer">{{ answer.text }}</div>
-                </template>
-              </div>
-              <div @click="editScore(answer)">
-                <template v-if="answer.isEditingScore">
-                  <input v-model.number="answer.points" @blur="saveScore(answer)" @keyup.enter="saveScore(answer)">
-                </template>
-                <template v-else>
-                  <div class="points">{{ answer.points }}</div>
-                </template>
-              </div>
+          <div class="answer-row answer-row-box" v-for="(answer, index) in answers" :key="index" :class="'answer-row-' + (index + 1)">
+            <template v-if="answer.text" >
+              <template v-if="answer.revealed">
+                <div class="answer">{{ answer.text }}</div>
+                <div class="points">{{ answer.points }}</div>
+              </template>
+              <template v-else>
+                <div class="row-number">{{ index + 1 }}</div>
+              </template>
             </template>
-            <div v-else class="row-number">{{ index + 1 }}</div>
           </div>
         </div>
       </div>
       <div class="team-score-container right-score">
         <div class="team-score">{{ team2Score }}</div>
+        <div class="team-name">{{ gameState.team2?.name }}</div>
       </div>
+      <div v-if="strikeImage" class="strike-overlay">
+        <img :src="strikeImage" class="strike-image" />
+      </div>
+    </div>
+    <div v-else class="question">
+      {{ question }}
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue';
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 
-const answers = ref([
-  { text: 'FLIGHT', points: 48, revealed: true, isEditing: false, isEditingScore: false },
-  { text: 'TELEPORTATION', points: 11, revealed: true, isEditing: false, isEditingScore: false },
-  { text: 'INVISIBILITY', points: 9, revealed: true, isEditing: false, isEditingScore: false },
-  { text: 'LASER EYES', points: '', revealed: false, isEditing: false, isEditingScore: false },
-  { text: 'X-RAY VISION', points: '', revealed: false, isEditing: false, isEditingScore: false },
-  { text: 'OMNISCIENCE', points: 7, revealed: false, isEditing: false, isEditingScore: false },
-  { text: 'STRENGTH', points: 5, revealed: true, isEditing: false, isEditingScore: false },
-  { text: 'IMMORTALITY', points: 5, revealed: true, isEditing: false, isEditingScore: false },
-]);
-
-const currentScore = ref(73);
+const gameState = ref(({}));
+const answers = ref([]);
+const currentScore = ref(0);
 const team1Score = ref(0);
 const team2Score = ref(0);
+const strikes = ref(0);
+const strikeImage = ref(null);
+const question = ref("");
 
-const toggleAnswer = (answer) => {
-  if (answer.isEditing || answer.isEditingScore) return; // Prevent toggle if editing
-  if (answer.revealed) {
-    currentScore.value -= answer.points;
-  } else {
-    currentScore.value += answer.points;
+const dingSound = new Audio('good-answer.mp3');
+const errrSound = new Audio('negative-buzzer.mp3');
+
+const eventSource = ref(null);
+
+const handleSSE = (event) => {
+  if (event.data === 'heartbeat') {
+    console.log('Received heartbeat');
+    return;
   }
-  answer.revealed = !answer.revealed;
+
+  const data = JSON.parse(event.data);
+  const previousScore = currentScore.value;
+  const previousStrikes = strikes.value;
+
+  answers.value = data.rounds[data.currentRound].answers;
+  currentScore.value = data.rounds[data.currentRound].points;
+  team1Score.value = data.team1.score;
+  team2Score.value = data.team2.score;
+  strikes.value = data.rounds[data.currentRound].strikes;
+  gameState.value = data;
+  question.value = data.rounds[data.currentRound].question;
+
+  if (strikes.value !== previousStrikes && strikes.value !== 0) {
+    errrSound.play();
+    if (strikes.value > 0 && strikes.value < 4) {
+      strikeImage.value = `strike${strikes.value}.png`;
+      setTimeout(() => {
+        strikeImage.value = null;
+      }, 2000);
+    }
+  } else if (currentScore.value > previousScore) {
+    dingSound.play();
+  }
 };
 
-const editAnswer = (answer) => {
-  answer.isEditing = true;
-};
+onMounted(() => {
+  eventSource.value = new EventSource(window.location.origin + '/api/view');
+  eventSource.value.onmessage = handleSSE;
+});
 
-const saveAnswer = (answer) => {
-  answer.isEditing = false;
-};
-
-const editScore = (answer) => {
-  answer.isEditingScore = true;
-};
-
-const saveScore = (answer) => {
-  answer.isEditingScore = false;
-};
+onUnmounted(() => {
+  if (eventSource.value) {
+    eventSource.value.close();
+  }
+});
 </script>
 
 <style scoped>
@@ -111,11 +124,27 @@ html, body {
   width: 90%;
 }
 
-.team-score-container {
+.question {
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100vw; /* Ensure full viewport width */
+  background-color:#2c3e50;
+  color: white;
+  font-size: 10rem;
+}
+
+.team-score-container {
+  display: flex;
+  flex-direction: column; /* Ensure vertical stacking */
+  align-items: center;
   height: 100%;
+  min-width: 15rem;
+  width: auto;
+  background-color: #08aafa;
+  padding: 0.625rem; /* 10px equivalent */
+  border-radius: 0.3125rem; /* 5px equivalent */
 }
 
 .left-score {
@@ -129,12 +158,14 @@ html, body {
 .team-score {
   font-size: 12rem;
   color: white; /* Changed color to white */
-  background-color: #08aafa;
-  padding: 0.625rem; /* 10px equivalent */
-  border-radius: 0.3125rem; /* 5px equivalent */
   display: inline-block;
   text-align: center;
-  width: 15rem;
+}
+
+.team-name {
+  font-size: 4rem;
+  color: white; /* Ensure the text is white */
+  text-align: center;
 }
 
 .game-board {
@@ -168,22 +199,64 @@ html, body {
 
 .answers {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.8rem;
   flex-grow: 1;
-  align-content: stretch; /* Ensure the answers section stretches */
+  align-content: stretch;
+}
+
+.answer-row-1 {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.answer-row-2 {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.answer-row-3 {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.answer-row-4 {
+  grid-column: 1;
+  grid-row: 4;
+}
+
+.answer-row-5 {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.answer-row-6 {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.answer-row-7 {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.answer-row-8 {
+  grid-column: 2;
+  grid-row: 4;
 }
 
 .answer-row {
   display: flex;
   justify-content: space-between;
-  background-color: #34495e;
-  padding: 18px; /* Adjusted padding */
-  border-radius: 5px; /* 5px equivalent */
+  padding: 18px;
+  border-radius: 5px;
   align-items: center;
-  border: 3px solid silver; /* Gold border for answer rows */
-  height: 12vh; /* Adjusted height to be taller */
-  cursor: pointer; /* Add cursor to indicate clickability */
+  height: 10vh;
+}
+
+.answer-row-box {
+  border: 3px solid silver;
+  background-color: #34495e;
 }
 
 .answer {
@@ -213,5 +286,21 @@ html, body {
   flex-shrink: 0;
   width: 7rem;
   text-align: right;
+}
+
+.strike-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.strike-image {
+  width: 50%;
 }
 </style>
