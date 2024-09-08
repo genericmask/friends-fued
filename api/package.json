@@ -2,9 +2,10 @@
   "name": "api",
   "version": "1.0.0",
   "description": "\"A Node.js API for tracking game state\"",
-  "main": "server.js",
+  "main": "server.ts",
   "scripts": {
-    "start": "node server.js",
+    "start": "node dist/server.js",
+    "build": "tsc",
     "dev": "ts-node-dev --respawn src/server.ts"
   },
   "author": "Casey Feikema",

@@ -1,6 +1,6 @@
 FROM --platform=$BUILDPLATFORM node:lts-alpine AS development
 
-WORKDIR /web
+WORKDIR /frontend
 
 COPY . .
 

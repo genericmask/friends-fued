@@ -1,7 +1,8 @@
 FROM node:lts-alpine
-WORKDIR /usr/src/app
+WORKDIR /usr
 COPY package*.json ./
-RUN npm i
+RUN npm install
 COPY . .
+RUN npm run build
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["node", "dist/server.js"]
