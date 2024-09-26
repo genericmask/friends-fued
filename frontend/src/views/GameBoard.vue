@@ -10,8 +10,13 @@
           <div class="score">{{ currentScore }}</div>
         </div>
         <div class="answers">
-          <div class="answer-row answer-row-box" v-for="(answer, index) in answers" :key="index" :class="'answer-row-' + (index + 1)">
-            <template v-if="answer.text" >
+          <div
+            class="answer-row answer-row-box"
+            v-for="(answer, index) in answers"
+            :key="index"
+            :class="'answer-row-' + (index + 1)"
+          >
+            <template v-if="answer.text">
               <template v-if="answer.revealed">
                 <div class="answer">{{ answer.text }}</div>
                 <div class="points">{{ answer.points }}</div>
@@ -38,63 +43,58 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 
-const gameState = ref(({}));
-const answers = ref([]);
-const currentScore = ref(0);
-const team1Score = ref(0);
-const team2Score = ref(0);
-const strikes = ref(0);
-const strikeImage = ref(null);
-const question = ref("");
+const gameState = ref({})
+const answers = ref([])
+const currentScore = ref(0)
+const team1Score = ref(0)
+const team2Score = ref(0)
+const strikes = ref(0)
+const strikeImage = ref(null)
+const question = ref('')
 
-const dingSound = new Audio('good-answer.mp3');
-const errrSound = new Audio('negative-buzzer.mp3');
+const dingSound = new Audio('good-answer.mp3')
+const errrSound = new Audio('negative-buzzer.mp3')
 
-const eventSource = ref(null);
+const eventSource = ref(null)
 
 const handleSSE = (event) => {
-  if (event.data === 'heartbeat') {
-    console.log('Received heartbeat');
-    return;
-  }
+  const data = JSON.parse(event.data)
+  const previousScore = currentScore.value
+  const previousStrikes = strikes.value
 
-  const data = JSON.parse(event.data);
-  const previousScore = currentScore.value;
-  const previousStrikes = strikes.value;
-
-  answers.value = data.rounds[data.currentRound].answers;
-  currentScore.value = data.rounds[data.currentRound].points;
-  team1Score.value = data.team1.score;
-  team2Score.value = data.team2.score;
-  strikes.value = data.rounds[data.currentRound].strikes;
-  gameState.value = data;
-  question.value = data.rounds[data.currentRound].question;
+  answers.value = data.rounds[data.currentRound].answers
+  currentScore.value = data.rounds[data.currentRound].points
+  team1Score.value = data.team1.score
+  team2Score.value = data.team2.score
+  strikes.value = data.rounds[data.currentRound].strikes
+  gameState.value = data
+  question.value = data.rounds[data.currentRound].question
 
   if (strikes.value !== previousStrikes && strikes.value !== 0) {
-    errrSound.play();
+    errrSound.play()
     if (strikes.value > 0 && strikes.value < 4) {
-      strikeImage.value = `strike${strikes.value}.png`;
+      strikeImage.value = `strike${strikes.value}.png`
       setTimeout(() => {
-        strikeImage.value = null;
-      }, 2000);
+        strikeImage.value = null
+      }, 2000)
     }
   } else if (currentScore.value > previousScore) {
-    dingSound.play();
+    dingSound.play()
   }
-};
+}
 
 onMounted(() => {
-  eventSource.value = new EventSource(window.location.origin + '/api/view');
-  eventSource.value.onmessage = handleSSE;
-});
+  eventSource.value = new EventSource(window.location.origin + '/api/view')
+  eventSource.value.onmessage = handleSSE
+})
 
 onUnmounted(() => {
   if (eventSource.value) {
-    eventSource.value.close();
+    eventSource.value.close()
   }
-});
+})
 </script>
 
 <style scoped>
@@ -102,7 +102,8 @@ onUnmounted(() => {
   font-size: 16px; /* Base font size for rem units */
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -130,7 +131,7 @@ html, body {
   justify-content: center;
   align-items: center;
   width: 100vw; /* Ensure full viewport width */
-  background-color:#2c3e50;
+  background-color: #2c3e50;
   color: white;
   font-size: 10rem;
 }
